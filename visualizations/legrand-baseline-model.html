@@ -1,0 +1,1072 @@
+<div id="legrand-baseline-model">
+  <style>
+    #legrand-baseline-model {
+      --acute: var(--viz-series-1);
+      --progress: var(--viz-series-2);
+      --removed: var(--viz-series-3);
+      --intervention: var(--viz-series-4);
+      --rule: color-mix(in srgb, var(--foreground) 18%, var(--background));
+      --rule-strong: color-mix(in srgb, var(--foreground) 34%, var(--background));
+      --edge: color-mix(in srgb, var(--foreground) 38%, var(--background));
+      --inactive: color-mix(in srgb, var(--foreground) 12%, var(--background));
+      display: grid;
+      gap: calc(var(--font-size-base) * 1.05);
+      width: 100%;
+      color: var(--foreground);
+    }
+
+    #legrand-baseline-model * {
+      box-sizing: border-box;
+    }
+
+    #legrand-baseline-model .topline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: calc(var(--font-size-base) * .55);
+    }
+
+    #legrand-baseline-model .title-group {
+      display: grid;
+      gap: calc(var(--font-size-base) * .18);
+    }
+
+    #legrand-baseline-model .kicker {
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .source-link {
+      color: var(--muted-foreground);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    #legrand-baseline-model .source-link:hover,
+    #legrand-baseline-model .source-link:focus-visible {
+      color: var(--foreground);
+    }
+
+    #legrand-baseline-model .control-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .75);
+      align-items: center;
+    }
+
+    #legrand-baseline-model .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: calc(var(--font-size-base) * .38);
+    }
+
+    #legrand-baseline-model .control-label {
+      color: var(--muted-foreground);
+      margin-right: 2px;
+    }
+
+    #legrand-baseline-model .view-switch {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .38);
+      padding-top: calc(var(--font-size-base) * .2);
+      border-top: 1px solid var(--rule);
+    }
+
+    #legrand-baseline-model .view-panel[hidden] {
+      display: none;
+    }
+
+    #legrand-baseline-model .network-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(230px, .55fr);
+      gap: calc(var(--font-size-base) * 1.25);
+      align-items: start;
+    }
+
+    #legrand-baseline-model .network-main {
+      min-width: 0;
+      display: grid;
+      gap: calc(var(--font-size-base) * .55);
+    }
+
+    #legrand-baseline-model .rate-strip {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .45) calc(var(--font-size-base) * 1);
+      min-height: calc(var(--font-size-base) * 1.4);
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .rate-item {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      white-space: nowrap;
+    }
+
+    #legrand-baseline-model .rate-item strong {
+      color: var(--foreground);
+      font-weight: 500;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #legrand-baseline-model .diagram-host {
+      min-width: 0;
+    }
+
+    #legrand-baseline-model .network-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+      color: var(--foreground);
+    }
+
+    #legrand-baseline-model .network-svg .node rect {
+      fill: color-mix(in srgb, currentColor 4%, var(--background));
+      stroke: var(--edge);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #legrand-baseline-model .network-svg .node.exposed rect {
+      fill: color-mix(in srgb, var(--progress) 11%, var(--background));
+      stroke: color-mix(in srgb, var(--progress) 58%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .node.infectious rect {
+      fill: color-mix(in srgb, var(--acute) 13%, var(--background));
+      stroke: color-mix(in srgb, var(--acute) 62%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .node.removed rect {
+      fill: color-mix(in srgb, var(--removed) 11%, var(--background));
+      stroke: color-mix(in srgb, var(--removed) 58%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .node-label {
+      fill: var(--foreground);
+      font-family: inherit;
+      font-size: 16px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    #legrand-baseline-model .network-svg .node-sub {
+      fill: var(--muted-foreground);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 400;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    #legrand-baseline-model .network-svg .edge {
+      fill: none;
+      stroke: var(--edge);
+      stroke-width: 1.8;
+      vector-effect: non-scaling-stroke;
+      transition: opacity .18s ease, stroke-width .18s ease;
+    }
+
+    #legrand-baseline-model .network-svg .edge.infection {
+      stroke: color-mix(in srgb, var(--acute) 74%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .edge.progress {
+      stroke: color-mix(in srgb, var(--progress) 70%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .edge.removed {
+      stroke: color-mix(in srgb, var(--removed) 70%, var(--foreground));
+    }
+
+    #legrand-baseline-model .network-svg .edge.is-selected {
+      stroke-width: 3.2;
+    }
+
+    #legrand-baseline-model .network-svg .edge.is-inactive {
+      opacity: .52;
+      stroke-width: 1.4;
+    }
+
+    #legrand-baseline-model .network-svg .edge.beta-off {
+      opacity: .26;
+      stroke-dasharray: 3 5;
+    }
+
+    #legrand-baseline-model .network-svg .edge-badge circle {
+      fill: var(--background);
+      stroke: var(--edge);
+      stroke-width: 1.2;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #legrand-baseline-model .network-svg .edge-badge.is-selected circle {
+      fill: var(--primary);
+      stroke: var(--primary);
+    }
+
+    #legrand-baseline-model .network-svg .edge-badge text {
+      fill: var(--foreground);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    #legrand-baseline-model .network-svg .edge-badge.is-selected text {
+      fill: var(--primary-foreground);
+    }
+
+    #legrand-baseline-model .network-svg .annotation {
+      fill: var(--muted-foreground);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 400;
+    }
+
+    #legrand-baseline-model .state-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .32) calc(var(--font-size-base) * .75);
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .state-item {
+      white-space: nowrap;
+    }
+
+    #legrand-baseline-model .inspector {
+      display: grid;
+      gap: calc(var(--font-size-base) * .7);
+      padding-left: calc(var(--font-size-base) * .9);
+      border-left: 1px solid var(--rule);
+      min-width: 0;
+    }
+
+    #legrand-baseline-model .transition-picker {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    #legrand-baseline-model .transition-button {
+      min-width: 0;
+      justify-content: center;
+      padding-inline: 4px;
+    }
+
+    #legrand-baseline-model .transition-card {
+      display: grid;
+      gap: calc(var(--font-size-base) * .45);
+    }
+
+    #legrand-baseline-model .transition-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: calc(var(--font-size-base) * .45);
+    }
+
+    #legrand-baseline-model .transition-name {
+      font-weight: 500;
+    }
+
+    #legrand-baseline-model .transition-arrow {
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #legrand-baseline-model .formula {
+      display: inline-block;
+      max-width: 100%;
+      padding: 6px 8px;
+      background: var(--muted);
+      color: var(--foreground);
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: var(--font-size-base);
+      overflow-wrap: anywhere;
+    }
+
+    #legrand-baseline-model .detail-copy {
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .param-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+    }
+
+    #legrand-baseline-model .intervention-note {
+      display: grid;
+      gap: 4px;
+      padding-top: calc(var(--font-size-base) * .4);
+      border-top: 1px solid var(--rule);
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .intervention-note strong {
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    #legrand-baseline-model .equation-view {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(220px, .65fr);
+      gap: calc(var(--font-size-base) * 1.15);
+      align-items: start;
+    }
+
+    #legrand-baseline-model .equation-list {
+      display: grid;
+      gap: calc(var(--font-size-base) * .35);
+      padding: 0;
+      margin: 0;
+      list-style: none;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: var(--font-size-base);
+    }
+
+    #legrand-baseline-model .equation-line {
+      padding: calc(var(--font-size-base) * .38) 0;
+      border-bottom: 1px solid var(--rule);
+      overflow-wrap: anywhere;
+    }
+
+    #legrand-baseline-model .equation-line:last-child {
+      border-bottom: 0;
+    }
+
+    #legrand-baseline-model .equation-aside {
+      display: grid;
+      gap: calc(var(--font-size-base) * .6);
+      color: var(--muted-foreground);
+      padding-left: calc(var(--font-size-base) * .9);
+      border-left: 1px solid var(--rule);
+    }
+
+    #legrand-baseline-model .aside-block {
+      display: grid;
+      gap: 4px;
+    }
+
+    #legrand-baseline-model .aside-block strong {
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    #legrand-baseline-model .parameter-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: calc(var(--font-size-base) * .45);
+    }
+
+    #legrand-baseline-model .parameter-title span {
+      color: var(--muted-foreground);
+    }
+
+    #legrand-baseline-model .parameter-table {
+      min-width: 620px;
+    }
+
+    #legrand-baseline-model .parameter-table td:first-child {
+      white-space: nowrap;
+    }
+
+    #legrand-baseline-model .parameter-table td:nth-child(2) {
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    #legrand-baseline-model .parameter-table th,
+    #legrand-baseline-model .parameter-table td {
+      vertical-align: top;
+    }
+
+    #legrand-baseline-model .footnote {
+      color: var(--muted-foreground);
+    }
+
+    @media (max-width: 760px) {
+      #legrand-baseline-model .network-layout,
+      #legrand-baseline-model .equation-view {
+        grid-template-columns: 1fr;
+      }
+
+      #legrand-baseline-model .inspector,
+      #legrand-baseline-model .equation-aside {
+        padding-left: 0;
+        border-left: 0;
+        padding-top: calc(var(--font-size-base) * .75);
+        border-top: 1px solid var(--rule);
+      }
+
+      #legrand-baseline-model .diagram-host {
+        background: none;
+      }
+    }
+
+    @media (max-width: 520px) {
+      #legrand-baseline-model .parameter-table,
+      #legrand-baseline-model .parameter-table tbody {
+        display: block;
+        width: 100%;
+        min-width: 0;
+      }
+
+      #legrand-baseline-model .parameter-table thead {
+        display: none;
+      }
+
+      #legrand-baseline-model .parameter-table tr {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) max-content;
+        column-gap: calc(var(--font-size-base) * .75);
+        padding: calc(var(--font-size-base) * .45) 0;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      #legrand-baseline-model .parameter-table td {
+        display: block;
+        padding: 0;
+        border: 0;
+      }
+
+      #legrand-baseline-model .parameter-table td:first-child {
+        grid-column: 1;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      #legrand-baseline-model .parameter-table td:nth-child(2) {
+        grid-column: 2;
+        text-align: right;
+      }
+
+      #legrand-baseline-model .parameter-table td:nth-child(3) {
+        grid-column: 1 / -1;
+        margin-top: 2px;
+        color: var(--muted-foreground);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #legrand-baseline-model .network-svg .edge {
+        transition: none;
+      }
+    }
+  </style>
+
+  <div class="topline">
+    <div class="title-group">
+      <div class="kicker text-small">Legrand et al. 2007 · 六状态随机分舱模型</div>
+      <h1>SEIHFR 基线模型</h1>
+    </div>
+    <a class="source-link text-small" href="https://doi.org/10.1017/S0950268806007217" target="_blank" rel="noreferrer">查看原文</a>
+  </div>
+
+  <div class="control-strip" aria-label="模型情景">
+    <div class="control-group">
+      <span class="control-label text-small">疫情</span>
+      <button class="btn" type="button" data-outbreak="drc" aria-pressed="true">刚果（金）1995</button>
+      <button class="btn" type="button" data-outbreak="uganda" aria-pressed="false">乌干达 2000</button>
+    </div>
+    <div class="control-group">
+      <span class="control-label text-small">阶段</span>
+      <button class="btn" type="button" data-stage="pre" aria-pressed="true">干预前</button>
+      <button class="btn" type="button" data-stage="post" aria-pressed="false">干预后</button>
+    </div>
+  </div>
+
+  <div class="view-switch" aria-label="查看内容">
+    <button class="btn" type="button" data-view="network" aria-pressed="true">
+      <i data-lucide="git-branch" aria-hidden="true"></i>状态转移
+    </button>
+    <button class="btn" type="button" data-view="equations" aria-pressed="false">
+      <i data-lucide="sigma" aria-hidden="true"></i>平均场 ODE
+    </button>
+    <button class="btn" type="button" data-view="parameters" aria-pressed="false">
+      <i data-lucide="table-2" aria-hidden="true"></i>参数
+    </button>
+  </div>
+
+  <section class="view-panel" id="view-network" aria-label="状态转移">
+    <div class="network-layout">
+      <div class="network-main">
+        <div class="rate-strip" id="rate-strip" aria-live="polite"></div>
+        <div class="diagram-host" id="network-host"></div>
+        <div class="state-legend text-small" aria-label="状态含义">
+          <span class="state-item"><strong>S</strong> 易感</span>
+          <span class="state-item"><strong>E</strong> 暴露</span>
+          <span class="state-item"><strong>I</strong> 社区传染</span>
+          <span class="state-item"><strong>H</strong> 住院</span>
+          <span class="state-item"><strong>F</strong> 未安葬死者</span>
+          <span class="state-item"><strong>R</strong> 康复或已安葬</span>
+        </div>
+      </div>
+
+      <aside class="inspector" aria-label="转移详情">
+        <div class="transition-picker" id="transition-picker"></div>
+        <div class="transition-card" aria-live="polite">
+          <div class="transition-head">
+            <div>
+              <div class="transition-arrow text-small" id="transition-index">转移 1</div>
+              <div class="transition-name" id="transition-name">新感染</div>
+            </div>
+            <div class="transition-arrow" id="transition-arrow">S → E</div>
+          </div>
+          <div class="formula" id="transition-formula"></div>
+          <div class="detail-copy" id="transition-meaning"></div>
+          <div class="param-tags" id="transition-params"></div>
+          <div class="intervention-note" id="transition-intervention"></div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="view-panel" id="view-equations" aria-label="平均场常微分方程组" hidden>
+    <div class="equation-view">
+      <div>
+        <ol class="equation-list" id="equation-list"></ol>
+      </div>
+      <aside class="equation-aside">
+        <div class="aside-block">
+          <strong>时变参数</strong>
+          <div id="equation-regime"></div>
+        </div>
+        <div class="aside-block">
+          <strong>不能丢失的结构</strong>
+          <div>R 同时表示康复者与已安葬死者</div>
+          <div>感染风险来自 I、H、F 三个状态</div>
+          <div>干预只改变传播率，不删除病程转移</div>
+        </div>
+        <div class="aside-block">
+          <strong>模型口径</strong>
+          <div>原文主体是 Gillespie 连续时间随机模型；这里展示共享同一组转移率的确定性平均场方程。</div>
+        </div>
+        <div class="aside-block">
+          <strong>来源</strong>
+          <div>表 2 的 8 条随机转移可逐项转成平均场方程。</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="view-panel" id="view-parameters" aria-label="参数" hidden>
+    <div class="parameter-title">
+      <h2 id="parameter-title">刚果（金）1995</h2>
+      <span class="text-small">传播率单位：周⁻¹；时长按原始数据换算</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-sm parameter-table">
+        <thead>
+          <tr>
+            <th scope="col">参数</th>
+            <th scope="col">值</th>
+            <th scope="col">作用</th>
+          </tr>
+        </thead>
+        <tbody id="parameter-body"></tbody>
+      </table>
+    </div>
+    <div class="footnote text-small" id="parameter-footnote"></div>
+  </section>
+
+  <script>
+    (() => {
+      const root = document.getElementById("legrand-baseline-model");
+      const networkHost = document.getElementById("network-host");
+      const rateStrip = document.getElementById("rate-strip");
+      const transitionPicker = document.getElementById("transition-picker");
+      const transitionIndex = document.getElementById("transition-index");
+      const transitionName = document.getElementById("transition-name");
+      const transitionArrow = document.getElementById("transition-arrow");
+      const transitionFormula = document.getElementById("transition-formula");
+      const transitionMeaning = document.getElementById("transition-meaning");
+      const transitionParams = document.getElementById("transition-params");
+      const transitionIntervention = document.getElementById("transition-intervention");
+      const equationList = document.getElementById("equation-list");
+      const equationRegime = document.getElementById("equation-regime");
+      const parameterTitle = document.getElementById("parameter-title");
+      const parameterBody = document.getElementById("parameter-body");
+      const parameterFootnote = document.getElementById("parameter-footnote");
+
+      const outbreaks = {
+        drc: {
+          name: "刚果（金）1995",
+          shortName: "刚果（金）",
+          population: 200000,
+          cases: 315,
+          intervention: "1995-05-04",
+          betaI: 0.588,
+          betaH: 0.794,
+          betaF: 7.653,
+          betaIBounds: "0.420–2.191",
+          betaHBounds: "0.001–4.091",
+          betaFBounds: "0.001–9.997",
+          communityDrop: 12,
+          communityDropBounds: "0–78",
+          R0: 2.7,
+          R0Bounds: "1.9–2.8",
+          R0I: 0.5,
+          R0H: 0.4,
+          R0F: 1.8,
+          incubationDays: 7,
+          onsetHospitalDays: 5,
+          onsetDeathDays: 9.6,
+          survivorInfectiousDays: 10,
+          deathBurialDays: 2,
+          hospitalization: 80,
+          cfr: 81,
+          theta1: 0.67,
+          delta1: 0.80,
+          delta2: 0.80
+        },
+        uganda: {
+          name: "乌干达 2000",
+          shortName: "乌干达",
+          population: 470000,
+          cases: 425,
+          intervention: "2000-10-15",
+          betaI: 3.532,
+          betaH: 0.012,
+          betaF: 0.462,
+          betaIBounds: "0.403–3.774",
+          betaHBounds: "0.0–6.427",
+          betaFBounds: "0.0–21.257",
+          communityDrop: 88,
+          communityDropBounds: "1–92",
+          R0: 2.7,
+          R0Bounds: "2.5–4.1",
+          R0I: 2.6,
+          R0H: 0.01,
+          R0F: 0.1,
+          incubationDays: 12,
+          onsetHospitalDays: 4.2,
+          onsetDeathDays: 8,
+          survivorInfectiousDays: 10,
+          deathBurialDays: 2,
+          hospitalization: 80,
+          cfr: 53,
+          theta1: 0.65,
+          delta1: 0.47,
+          delta2: 0.42
+        }
+      };
+
+      const transitions = [
+        {
+          id: 1,
+          name: "新感染",
+          from: "S",
+          to: "E",
+          type: "infection",
+          formula: "(βI·S·I + βH·S·H + βF·S·F) / N",
+          meaning: "易感者分别接触社区传染者、住院者或未安葬死者后进入暴露状态。",
+          params: ["βI", "βH", "βF", "N"],
+          post: "论文将干预后的感染风险简化为 βI(t)·S·I/N。"
+        },
+        {
+          id: 2,
+          name: "发病",
+          from: "E",
+          to: "I",
+          type: "progress",
+          formula: "α·E",
+          meaning: "暴露者经过平均潜伏期后出现症状，并进入社区传染状态。",
+          params: ["α"],
+          post: "干预不改变潜伏期转移。"
+        },
+        {
+          id: 3,
+          name: "住院",
+          from: "I",
+          to: "H",
+          type: "progress",
+          formula: "γh·θ1·I",
+          meaning: "社区传染者被识别并收入医院；θ1 用于匹配总体住院比例。",
+          params: ["γh", "θ1"],
+          post: "干预可以改变 γh 或 θ1，从而改变住院速度。"
+        },
+        {
+          id: 4,
+          name: "住院后死亡",
+          from: "H",
+          to: "F",
+          type: "progress",
+          formula: "γdh·δ2·H",
+          meaning: "住院患者死亡但尚未安葬，进入葬礼传播风险阶段。",
+          params: ["γdh", "δ2"],
+          post: "病程本身保留；介入安全安葬会改变 γf。"
+        },
+        {
+          id: 5,
+          name: "安葬",
+          from: "F",
+          to: "R",
+          type: "removed",
+          formula: "γf·F",
+          meaning: "未安葬死者被安葬后不再具有葬礼传播机会，进入 R。",
+          params: ["γf"],
+          post: "安全安葬可通过提高 γf 或降低葬礼传播风险体现。"
+        },
+        {
+          id: 6,
+          name: "未住院康复",
+          from: "I",
+          to: "R",
+          type: "removed",
+          formula: "γi·(1−θ1)·(1−δ1)·I",
+          meaning: "未住院且最终存活的社区病例结束传染期并进入 R。",
+          params: ["γi", "θ1", "δ1"],
+          post: "治疗或早期发现可能改变该路径的持续时间。"
+        },
+        {
+          id: 7,
+          name: "社区死亡",
+          from: "I",
+          to: "F",
+          type: "progress",
+          formula: "γd·δ1·(1−θ1)·I",
+          meaning: "未住院病例死亡但尚未安葬，转入葬礼传播阶段。",
+          params: ["γd", "δ1", "θ1"],
+          post: "治疗可改变该转移，但原始模型没有单独的治疗参数。"
+        },
+        {
+          id: 8,
+          name: "住院后康复",
+          from: "H",
+          to: "R",
+          type: "removed",
+          formula: "γih·(1−δ2)·H",
+          meaning: "住院患者存活并结束传染期，进入 R。",
+          params: ["γih", "δ2"],
+          post: "治疗可以改变住院康复速度。"
+        }
+      ];
+
+      let activeOutbreak = "drc";
+      let activeStage = "pre";
+      let activeView = "network";
+      let selectedTransition = 1;
+
+      function betaAfter() {
+        const outbreak = outbreaks[activeOutbreak];
+        return outbreak.betaI * (1 - outbreak.communityDrop / 100);
+      }
+
+      function currentRates(outbreak) {
+        if (activeStage === "pre") {
+          return { betaI: outbreak.betaI, betaH: outbreak.betaH, betaF: outbreak.betaF };
+        }
+        return { betaI: betaAfter(), betaH: 0, betaF: 0 };
+      }
+
+      function buttonSetPressed(selector, attribute, value) {
+        document.querySelectorAll(selector).forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset[attribute] === value));
+        });
+      }
+
+      function transitionMarker(x, y, number) {
+        return `
+          <g class="edge-badge ${number === selectedTransition ? "is-selected" : ""}" transform="translate(${x} ${y})">
+            <circle r="10"></circle>
+            <text y="1">${number}</text>
+          </g>
+        `;
+      }
+
+      function edgeClass(transition) {
+        const classes = ["edge", transition.type];
+        if (transition.id === selectedTransition) classes.push("is-selected");
+        else classes.push("is-inactive");
+        if (
+          activeStage === "post" &&
+          transition.id === 1
+        ) {
+          classes.push("beta-off");
+        }
+        return classes.join(" ");
+      }
+
+      function node(x, y, w, h, label, type, sub = "") {
+        return `
+          <g class="node ${type}" transform="translate(${x} ${y})">
+            <rect width="${w}" height="${h}" rx="7"></rect>
+            <text class="node-label" x="${w / 2}" y="${sub ? 16 : 21}">${label}</text>
+            ${sub ? `<text class="node-sub" x="${w / 2}" y="31">${sub}</text>` : ""}
+          </g>
+        `;
+      }
+
+      function renderNetwork() {
+        const width = networkHost.getBoundingClientRect().width || 620;
+        const narrow = width < 520;
+        const t1 = transitions[0];
+        const markers = `
+          <defs>
+            <marker id="lg-arrow" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--edge)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="lg-arrow-active" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--primary)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+          </defs>
+        `;
+
+        if (narrow) {
+          networkHost.innerHTML = `
+            <svg class="network-svg" viewBox="0 0 330 250" role="img" aria-labelledby="network-title network-desc">
+              <title id="network-title">Legrand SEIHFR 状态转移网络</title>
+              <desc id="network-desc">S 经 E 到 I，I 可住院 H 或死亡 F，H 可死亡或康复，F 安葬后进入 R。</desc>
+              ${markers}
+              <path class="${edgeClass(t1)}" d="M77 70H113" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(95, 57, 1)}
+              <path class="${edgeClass(transitions[1])}" d="M159 70H193" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(176, 57, 2)}
+              ${node(10, 45, 67, 42, "S", "susceptible", "易感")}
+              ${node(110, 45, 49, 42, "E", "exposed", "暴露")}
+              ${node(193, 45, 49, 42, "I", "infectious", "社区")}
+              <path class="${edgeClass(transitions[2])}" d="M242 66H268" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(255, 53, 3)}
+              ${node(268, 45, 52, 42, "H", "infectious", "住院")}
+              <path class="${edgeClass(transitions[3])}" d="M294 87V118" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(310, 102, 4)}
+              ${node(268, 118, 52, 42, "F", "removed", "未安葬")}
+              <path class="${edgeClass(transitions[4])}" d="M268 139H240" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(254, 154, 5)}
+              ${node(184, 118, 56, 42, "R", "removed", "移除")}
+              <path class="${edgeClass(transitions[5])}" d="M214 87C214 97 204 118 202 118" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(201, 101, 6)}
+              <path class="${edgeClass(transitions[6])}" d="M218 87C222 98 245 112 268 118" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(242, 98, 7)}
+              <path class="${edgeClass(transitions[7])}" d="M320 87C321 99 310 118 240 118" marker-end="url(#lg-arrow)"></path>
+              ${transitionMarker(319, 103, 8)}
+              <text class="annotation" x="10" y="27">感染源：I · H · F</text>
+              <text class="annotation" x="10" y="190">R = 康复者 + 已安葬死者</text>
+              <text class="annotation" x="10" y="208">没有 R → S / I 返回路径</text>
+            </svg>
+          `;
+          return;
+        }
+
+        networkHost.innerHTML = `
+          <svg class="network-svg" viewBox="0 0 760 300" role="img" aria-labelledby="network-title network-desc">
+            <title id="network-title">Legrand SEIHFR 状态转移网络</title>
+            <desc id="network-desc">S 经 E 到 I，I 可住院 H 或死亡 F，H 可死亡或康复，F 安葬后进入 R。八条转移对应论文表 2。</desc>
+            ${markers}
+            <path class="${edgeClass(t1)}" d="M82 123H116" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(99, 105, 1)}
+            <path class="${edgeClass(transitions[1])}" d="M190 123H224" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(207, 105, 2)}
+            <path class="${edgeClass(transitions[2])}" d="M298 123H360" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(329, 105, 3)}
+            <path class="${edgeClass(transitions[3])}" d="M434 123H496" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(465, 105, 4)}
+            <path class="${edgeClass(transitions[4])}" d="M570 123H634" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(602, 105, 5)}
+            ${node(8, 98, 74, 50, "S", "susceptible", "易感")}
+            ${node(116, 98, 74, 50, "E", "exposed", "暴露")}
+            ${node(224, 98, 74, 50, "I", "infectious", "社区")}
+            ${node(360, 98, 74, 50, "H", "infectious", "住院")}
+            ${node(496, 98, 74, 50, "F", "removed", "未安葬")}
+            ${node(634, 98, 74, 50, "R", "removed", "移除")}
+            <path class="${edgeClass(transitions[5])}" d="M260 148C300 232 520 232 650 148" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(455, 218, 6)}
+            <path class="${edgeClass(transitions[6])}" d="M262 148C310 190 430 190 512 148" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(387, 182, 7)}
+            <path class="${edgeClass(transitions[7])}" d="M397 98C420 40 560 40 664 98" marker-end="url(#lg-arrow)"></path>
+            ${transitionMarker(530, 56, 8)}
+            <text class="annotation" x="8" y="76">感染源：I · H · F</text>
+            <text class="annotation" x="8" y="267">R = 康复者 + 已安葬死者</text>
+            <text class="annotation" x="752" y="267" text-anchor="end">没有 R → S / I 返回路径</text>
+          </svg>
+        `;
+      }
+
+      function renderRateStrip() {
+        const outbreak = outbreaks[activeOutbreak];
+        const rates = currentRates(outbreak);
+        const formatted = rates.betaI.toFixed(3);
+        rateStrip.innerHTML = `
+          <span class="rate-item"><span>βI</span><strong>${formatted}</strong><span>/周</span></span>
+          <span class="rate-item"><span>βH</span><strong>${rates.betaH.toFixed(3)}</strong><span>/周</span></span>
+          <span class="rate-item"><span>βF</span><strong>${rates.betaF.toFixed(3)}</strong><span>/周</span></span>
+          <span class="rate-item"><span>${activeStage === "pre" ? "原始参数" : "阶跃干预"}</span><strong>${activeStage === "pre" ? "t < T" : "t ≥ T"}</strong></span>
+        `;
+      }
+
+      function renderTransitionPicker() {
+        transitionPicker.innerHTML = transitions.map((transition) => `
+          <button
+            class="btn transition-button"
+            type="button"
+            data-transition="${transition.id}"
+            aria-pressed="${transition.id === selectedTransition}"
+            aria-label="转移 ${transition.id}：${transition.name}"
+          >${transition.id}</button>
+        `).join("");
+        transitionPicker.querySelectorAll("[data-transition]").forEach((button) => {
+          button.addEventListener("click", () => {
+            selectedTransition = Number(button.dataset.transition);
+            renderAll();
+          });
+        });
+      }
+
+      function renderTransitionDetail() {
+        const transition = transitions.find((item) => item.id === selectedTransition);
+        transitionIndex.textContent = `转移 ${transition.id}`;
+        transitionName.textContent = transition.name;
+        transitionArrow.textContent = `${transition.from} → ${transition.to}`;
+        transitionFormula.textContent = transition.formula;
+        transitionMeaning.textContent = transition.meaning;
+        transitionParams.innerHTML = transition.params.map((param) => `<span class="viz-badge">${param}</span>`).join("");
+        transitionIntervention.innerHTML = `
+          <strong>${activeStage === "pre" ? "干预前" : "干预后"}</strong>
+          <div>${activeStage === "pre" ? "传播率取原始拟合值。" : transition.post}</div>
+        `;
+      }
+
+      function renderEquations() {
+        const outbreak = outbreaks[activeOutbreak];
+        const rates = currentRates(outbreak);
+        equationList.innerHTML = `
+          <li class="equation-line">dS/dt = −(βI·S·I + βH·S·H + βF·S·F) / N</li>
+          <li class="equation-line">dE/dt = (βI·S·I + βH·S·H + βF·S·F) / N − α·E</li>
+          <li class="equation-line">dI/dt = α·E − [γh·θ1 + γi·(1−θ1)·(1−δ1) + γd·(1−θ1)·δ1]·I</li>
+          <li class="equation-line">dH/dt = γh·θ1·I − [γdh·δ2 + γih·(1−δ2)]·H</li>
+          <li class="equation-line">dF/dt = γd·(1−θ1)·δ1·I + γdh·δ2·H − γf·F</li>
+          <li class="equation-line">dR/dt = γi·(1−θ1)·(1−δ1)·I + γih·(1−δ2)·H + γf·F</li>
+        `;
+        equationRegime.innerHTML = activeStage === "pre"
+          ? `βI=${rates.betaI.toFixed(3)}，βH=${rates.betaH.toFixed(3)}，βF=${rates.betaF.toFixed(3)} / 周`
+          : `βI(t)=${rates.betaI.toFixed(3)}，βH(t)=0，βF(t)=0 / 周`;
+      }
+
+      function renderParameters() {
+        const outbreak = outbreaks[activeOutbreak];
+        const rates = currentRates(outbreak);
+        parameterTitle.textContent = outbreak.name;
+        parameterBody.innerHTML = `
+          <tr><td>βI（当前阶段）</td><td>${rates.betaI.toFixed(3)}</td><td>社区传播系数；干预前估计 ${outbreak.betaI}（95% CI ${outbreak.betaIBounds}）</td></tr>
+          <tr><td>βH（当前阶段）</td><td>${rates.betaH.toFixed(3)}</td><td>院内传播系数；干预前估计 ${outbreak.betaH}（95% CI ${outbreak.betaHBounds}）</td></tr>
+          <tr><td>βF（当前阶段）</td><td>${rates.betaF.toFixed(3)}</td><td>葬礼传播系数；干预前估计 ${outbreak.betaF}（95% CI ${outbreak.betaFBounds}）</td></tr>
+          <tr><td>1−z</td><td>${outbreak.communityDrop}%</td><td>干预后社区传播降幅；95% CI ${outbreak.communityDropBounds}%</td></tr>
+          <tr><td>R₀</td><td>${outbreak.R0}</td><td>基本再生数；95% CI ${outbreak.R0Bounds}</td></tr>
+          <tr><td>R₀I / R₀H / R₀F</td><td>${outbreak.R0I} / ${outbreak.R0H} / ${outbreak.R0F}</td><td>社区、住院、葬礼三个传播分量</td></tr>
+          <tr><td>1/α</td><td>${outbreak.incubationDays} 天</td><td>平均潜伏期</td></tr>
+          <tr><td>1/γh</td><td>${outbreak.onsetHospitalDays} 天</td><td>发病至住院平均时间</td></tr>
+          <tr><td>1/γd</td><td>${outbreak.onsetDeathDays} 天</td><td>发病至死亡平均时间</td></tr>
+          <tr><td>1/γi</td><td>${outbreak.survivorInfectiousDays} 天</td><td>存活者从发病至传染期结束</td></tr>
+          <tr><td>1/γf</td><td>${outbreak.deathBurialDays} 天</td><td>死亡至安葬平均时间</td></tr>
+          <tr><td>θ</td><td>${outbreak.hospitalization}%</td><td>传染性病例的住院比例</td></tr>
+          <tr><td>δ</td><td>${outbreak.cfr}%</td><td>总体病死率</td></tr>
+          <tr><td>θ1 / δ1 / δ2</td><td>${outbreak.theta1} / ${outbreak.delta1} / ${outbreak.delta2}</td><td>用于让状态转移与住院率、病死率一致</td></tr>
+        `;
+        parameterFootnote.textContent = `干预日期：${outbreak.intervention}；N=${outbreak.population.toLocaleString()}；报告病例 ${outbreak.cases}。干预后阶段沿用原文的极端假设 βH=βF=0。`;
+      }
+
+      function showView(view) {
+        activeView = view;
+        buttonSetPressed("[data-view]", "view", view);
+        document.querySelectorAll(".view-panel").forEach((panel) => {
+          panel.hidden = panel.id !== `view-${view}`;
+        });
+      }
+
+      function renderAll() {
+        buttonSetPressed("[data-outbreak]", "outbreak", activeOutbreak);
+        buttonSetPressed("[data-stage]", "stage", activeStage);
+        renderRateStrip();
+        renderNetwork();
+        renderTransitionPicker();
+        renderTransitionDetail();
+        renderEquations();
+        renderParameters();
+      }
+
+      document.querySelectorAll("[data-outbreak]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeOutbreak = button.dataset.outbreak;
+          renderAll();
+          saveState();
+        });
+      });
+
+      document.querySelectorAll("[data-stage]").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeStage = button.dataset.stage;
+          renderAll();
+          saveState();
+        });
+      });
+
+      document.querySelectorAll("[data-view]").forEach((button) => {
+        button.addEventListener("click", () => {
+          showView(button.dataset.view);
+          saveState();
+        });
+      });
+
+      let resizeTimer = 0;
+      const observer = new ResizeObserver(() => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(renderNetwork, 80);
+      });
+      observer.observe(networkHost);
+
+      function saveState() {
+        if (window.openai?.setWidgetState) {
+          window.openai.setWidgetState({
+            modelContent: {
+              outbreak: activeOutbreak,
+              stage: activeStage,
+              view: activeView,
+              transition: selectedTransition
+            },
+            privateContent: {
+              outbreak: activeOutbreak,
+              stage: activeStage,
+              view: activeView,
+              transition: selectedTransition
+            }
+          }).catch(() => {});
+        }
+      }
+
+      window.addEventListener("openai:set_globals", (event) => {
+        const state = event.detail?.globals?.widgetState;
+        if (!state) return;
+        if (outbreaks[state.outbreak]) activeOutbreak = state.outbreak;
+        if (["pre", "post"].includes(state.stage)) activeStage = state.stage;
+        if (["network", "equations", "parameters"].includes(state.view)) activeView = state.view;
+        if (Number.isInteger(state.transition) && state.transition >= 1 && state.transition <= 8) {
+          selectedTransition = state.transition;
+        }
+        renderAll();
+        showView(activeView);
+      });
+
+      const saved = window.openai?.widgetState || {};
+      if (outbreaks[saved.outbreak]) activeOutbreak = saved.outbreak;
+      if (["pre", "post"].includes(saved.stage)) activeStage = saved.stage;
+      if (["network", "equations", "parameters"].includes(saved.view)) activeView = saved.view;
+      if (Number.isInteger(saved.transition) && saved.transition >= 1 && saved.transition <= 8) {
+        selectedTransition = saved.transition;
+      }
+
+      renderAll();
+      showView(activeView);
+    })();
+  </script>
+</div>

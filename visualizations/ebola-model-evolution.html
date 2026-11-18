@@ -1,0 +1,913 @@
+<div id="ebola-model-evolution">
+  <style>
+    #ebola-model-evolution {
+      --acute: var(--viz-series-1);
+      --survivor: var(--viz-series-2);
+      --relapse: var(--viz-series-3);
+      --reinfect: var(--viz-series-4);
+      --scale: var(--viz-series-5);
+      --edge: color-mix(in srgb, var(--foreground) 38%, var(--background));
+      --edge-soft: color-mix(in srgb, var(--foreground) 18%, var(--background));
+      display: grid;
+      gap: calc(var(--font-size-base) * 1.15);
+      width: 100%;
+      color: var(--foreground);
+    }
+
+    #ebola-model-evolution * {
+      box-sizing: border-box;
+    }
+
+    #ebola-model-evolution .model-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .5);
+    }
+
+    #ebola-model-evolution .model-tab {
+      display: grid;
+      gap: 2px;
+      min-width: 138px;
+      text-align: left;
+    }
+
+    #ebola-model-evolution .model-tab .year {
+      color: var(--muted-foreground);
+      font-variant-numeric: tabular-nums;
+    }
+
+    #ebola-model-evolution .model-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      justify-content: space-between;
+      gap: calc(var(--font-size-base) * .65);
+    }
+
+    #ebola-model-evolution .model-title-group {
+      display: grid;
+      gap: calc(var(--font-size-base) * .18);
+    }
+
+    #ebola-model-evolution .model-kicker {
+      color: var(--muted-foreground);
+    }
+
+    #ebola-model-evolution .source-link {
+      color: var(--muted-foreground);
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    #ebola-model-evolution .source-link:hover,
+    #ebola-model-evolution .source-link:focus-visible {
+      color: var(--foreground);
+    }
+
+    #ebola-model-evolution .diagram {
+      width: 100%;
+      min-height: 210px;
+      color: var(--foreground);
+      overflow: visible;
+    }
+
+    #ebola-model-evolution .diagram .node rect {
+      fill: color-mix(in srgb, currentColor 4%, var(--background));
+      stroke: var(--edge);
+      stroke-width: 1;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #ebola-model-evolution .diagram .node.acute rect {
+      fill: color-mix(in srgb, var(--acute) 12%, var(--background));
+      stroke: color-mix(in srgb, var(--acute) 68%, var(--foreground));
+    }
+
+    #ebola-model-evolution .diagram .node.survivor rect {
+      fill: color-mix(in srgb, var(--survivor) 13%, var(--background));
+      stroke: color-mix(in srgb, var(--survivor) 66%, var(--foreground));
+    }
+
+    #ebola-model-evolution .diagram .node.scale rect {
+      fill: color-mix(in srgb, var(--scale) 12%, var(--background));
+      stroke: color-mix(in srgb, var(--scale) 62%, var(--foreground));
+    }
+
+    #ebola-model-evolution .diagram .node text {
+      fill: var(--foreground);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 500;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    #ebola-model-evolution .diagram .subtext {
+      fill: var(--muted-foreground);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 400;
+      text-anchor: middle;
+      dominant-baseline: middle;
+    }
+
+    #ebola-model-evolution .diagram .edge {
+      fill: none;
+      stroke: var(--edge);
+      stroke-width: 1.4;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #ebola-model-evolution .diagram .edge.acute {
+      stroke: color-mix(in srgb, var(--acute) 78%, var(--foreground));
+    }
+
+    #ebola-model-evolution .diagram .edge.survivor {
+      stroke: color-mix(in srgb, var(--survivor) 80%, var(--foreground));
+    }
+
+    #ebola-model-evolution .diagram .edge.relapse {
+      stroke: color-mix(in srgb, var(--relapse) 86%, var(--foreground));
+      stroke-dasharray: 5 4;
+    }
+
+    #ebola-model-evolution .diagram .edge.reinfect {
+      stroke: color-mix(in srgb, var(--reinfect) 82%, var(--foreground));
+      stroke-dasharray: 2 4;
+    }
+
+    #ebola-model-evolution .diagram .edge-label {
+      fill: var(--foreground);
+      paint-order: stroke;
+      stroke: var(--background);
+      stroke-width: 4px;
+      stroke-linejoin: round;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      text-anchor: middle;
+    }
+
+    #ebola-model-evolution .diagram .threshold {
+      fill: none;
+      stroke: var(--edge-soft);
+      stroke-width: 1;
+      stroke-dasharray: 4 5;
+      vector-effect: non-scaling-stroke;
+    }
+
+    #ebola-model-evolution .diagram .threshold-label {
+      fill: var(--muted-foreground);
+      font-family: inherit;
+      font-size: 11px;
+      text-anchor: end;
+    }
+
+    #ebola-model-evolution .diagram .persistence {
+      fill: color-mix(in srgb, var(--survivor) 58%, var(--background));
+      stroke: none;
+    }
+
+    #ebola-model-evolution .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .45) calc(var(--font-size-base) * .9);
+      color: var(--muted-foreground);
+    }
+
+    #ebola-model-evolution .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    #ebola-model-evolution .legend-line {
+      width: 24px;
+      height: 0;
+      border-top: 2px solid currentColor;
+    }
+
+    #ebola-model-evolution .legend-line.dashed {
+      border-top-style: dashed;
+    }
+
+    #ebola-model-evolution .legend-line.dotted {
+      border-top-style: dotted;
+    }
+
+    #ebola-model-evolution .legend-item.acute {
+      color: var(--acute);
+    }
+
+    #ebola-model-evolution .legend-item.survivor {
+      color: var(--survivor);
+    }
+
+    #ebola-model-evolution .legend-item.relapse {
+      color: var(--relapse);
+    }
+
+    #ebola-model-evolution .legend-item.reinfect {
+      color: var(--reinfect);
+    }
+
+    #ebola-model-evolution .legend-item.scale {
+      color: var(--scale);
+    }
+
+    #ebola-model-evolution .legend-item span:last-child {
+      color: var(--foreground);
+    }
+
+    #ebola-model-evolution .stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    #ebola-model-evolution .stat-value {
+      overflow-wrap: anywhere;
+    }
+
+    #ebola-model-evolution .delta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: calc(var(--font-size-base) * .42);
+      align-items: center;
+    }
+
+    #ebola-model-evolution .delta-label {
+      color: var(--muted-foreground);
+      margin-right: 3px;
+    }
+
+    #ebola-model-evolution .time-block {
+      display: grid;
+      gap: calc(var(--font-size-base) * .42);
+    }
+
+    #ebola-model-evolution .time-labels {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      color: var(--muted-foreground);
+      text-align: center;
+    }
+
+    #ebola-model-evolution .time-track {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      height: 16px;
+      overflow: hidden;
+      background:
+        linear-gradient(var(--edge-soft), var(--edge-soft)) center / 100% 1px no-repeat;
+    }
+
+    #ebola-model-evolution .time-track::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(var(--edge-soft), var(--edge-soft)) 25% 0 / 1px 100% no-repeat,
+        linear-gradient(var(--edge-soft), var(--edge-soft)) 50% 0 / 1px 100% no-repeat,
+        linear-gradient(var(--edge-soft), var(--edge-soft)) 75% 0 / 1px 100% no-repeat;
+      pointer-events: none;
+    }
+
+    #ebola-model-evolution .time-active {
+      grid-row: 1;
+      height: 8px;
+      align-self: center;
+      background: color-mix(in srgb, var(--acute) 72%, var(--background));
+      z-index: 1;
+      transition: left .22s ease, width .22s ease, background-color .22s ease;
+    }
+
+    #ebola-model-evolution .comparison-title {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: calc(var(--font-size-base) * .35);
+    }
+
+    #ebola-model-evolution .comparison-title span {
+      color: var(--muted-foreground);
+    }
+
+    #ebola-model-evolution .comparison-table {
+      min-width: 720px;
+    }
+
+    #ebola-model-evolution .comparison-table th,
+    #ebola-model-evolution .comparison-table td {
+      vertical-align: top;
+    }
+
+    #ebola-model-evolution .comparison-table th:not(:first-child),
+    #ebola-model-evolution .comparison-table td:not(:first-child) {
+      text-align: center;
+    }
+
+    #ebola-model-evolution .comparison-table tbody th {
+      color: var(--muted-foreground);
+      font-weight: 400;
+      white-space: nowrap;
+    }
+
+    #ebola-model-evolution .comparison-table .model-col {
+      min-width: 128px;
+    }
+
+    #ebola-model-evolution .comparison-table .yes {
+      color: var(--foreground);
+      font-weight: 500;
+    }
+
+    #ebola-model-evolution .comparison-table .limited {
+      color: var(--muted-foreground);
+    }
+
+    #ebola-model-evolution .comparison-table .none {
+      color: color-mix(in srgb, var(--muted-foreground) 72%, var(--background));
+    }
+
+    #ebola-model-evolution .model-col-button {
+      padding: 0;
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 3px;
+    }
+
+    #ebola-model-evolution .model-col-button:hover,
+    #ebola-model-evolution .model-col-button:focus-visible {
+      color: var(--primary);
+    }
+
+    #ebola-model-evolution .takeaway {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: calc(var(--font-size-base) * .8);
+      padding-top: calc(var(--font-size-base) * .2);
+    }
+
+    #ebola-model-evolution .takeaway-item {
+      display: grid;
+      gap: calc(var(--font-size-base) * .2);
+    }
+
+    #ebola-model-evolution .takeaway-item strong {
+      font-weight: 500;
+    }
+
+    #ebola-model-evolution .takeaway-item span {
+      color: var(--muted-foreground);
+    }
+
+    @media (max-width: 640px) {
+      #ebola-model-evolution .model-tab {
+        flex: 1 1 calc(50% - var(--font-size-base) * .5);
+        min-width: 0;
+      }
+
+      #ebola-model-evolution .stats,
+      #ebola-model-evolution .takeaway {
+        grid-template-columns: 1fr;
+      }
+
+      #ebola-model-evolution .diagram {
+        min-height: 310px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #ebola-model-evolution .time-active {
+        transition: none;
+      }
+    }
+  </style>
+
+  <div class="model-tabs" role="group" aria-label="选择模型">
+    <button class="btn model-tab" type="button" data-model="legrand" aria-pressed="true">
+      <span class="year">2007</span>
+      <strong>急性传播</strong>
+      <span class="text-small text-muted">Legrand</span>
+    </button>
+    <button class="btn model-tab" type="button" data-model="abbate" aria-pressed="false">
+      <span class="year">2016</span>
+      <strong>康复期性传播</strong>
+      <span class="text-small text-muted">Abbate</span>
+    </button>
+    <button class="btn model-tab" type="button" data-model="agusto" aria-pressed="false">
+      <span class="year">2017</span>
+      <strong>复发 + 再感染</strong>
+      <span class="text-small text-muted">Agusto</span>
+    </button>
+    <button class="btn model-tab" type="button" data-model="lokonon" aria-pressed="false">
+      <span class="year">2026</span>
+      <strong>年龄分层储库</strong>
+      <span class="text-small text-muted">Lokonon · 预印本</span>
+    </button>
+  </div>
+
+  <div class="model-head">
+    <div class="model-title-group">
+      <div class="model-kicker" id="model-kicker">急性传播模型</div>
+      <h2 id="model-title" aria-live="polite">Legrand 等 · SEIHFR</h2>
+    </div>
+    <a class="source-link text-small" id="model-source" href="https://doi.org/10.1017/S0950268806007217" target="_blank" rel="noreferrer">论文</a>
+  </div>
+
+  <div id="diagram-host">
+    <svg class="diagram" id="model-diagram" role="img" aria-labelledby="diagram-title diagram-desc">
+      <title id="diagram-title">Legrand 2007 模型状态图</title>
+      <desc id="diagram-desc">易感者、暴露者、社区感染者、住院者、未安葬死者和移出传播链者组成的急性传播链。</desc>
+    </svg>
+  </div>
+
+  <div class="legend" aria-label="路径图例">
+    <span class="legend-item acute"><span class="legend-line"></span><span>急性传播</span></span>
+    <span class="legend-item survivor"><span class="legend-line"></span><span>康复者持续状态</span></span>
+    <span class="legend-item relapse"><span class="legend-line dashed"></span><span>病毒复燃</span></span>
+    <span class="legend-item reinfect"><span class="legend-line dotted"></span><span>再感染</span></span>
+    <span class="legend-item scale"><span class="legend-line"></span><span>群体再燃</span></span>
+  </div>
+
+  <div class="viz-grid stats" aria-live="polite">
+    <div class="card viz-stat">
+      <div class="text-small text-muted">核心新增</div>
+      <div class="viz-stat-value stat-value" id="stat-mechanism">8 条急性转移</div>
+    </div>
+    <div class="card viz-stat">
+      <div class="text-small text-muted">时间尺度</div>
+      <div class="viz-stat-value stat-value" id="stat-horizon">1–51 周</div>
+    </div>
+    <div class="card viz-stat">
+      <div class="text-small text-muted">主要输出</div>
+      <div class="viz-stat-value stat-value" id="stat-output">R₀ / 干预效果</div>
+    </div>
+  </div>
+
+  <div class="delta-row" id="delta-row" aria-live="polite">
+    <span class="text-small delta-label">与旧模型相比</span>
+    <span class="viz-badge">R 为吸收态</span>
+    <span class="viz-badge">均匀混合</span>
+    <span class="viz-badge">周发病拟合</span>
+  </div>
+
+  <div class="time-block" role="img" aria-label="模型覆盖的概念时间尺度">
+    <div class="time-labels text-small">
+      <span>急性期</span>
+      <span>康复期</span>
+      <span>数月后</span>
+      <span>数年后</span>
+    </div>
+    <div class="time-track">
+      <div class="time-active" id="time-active" style="grid-column:1 / span 1;"></div>
+    </div>
+    <div class="text-small text-muted" id="time-caption">疫情曲线与干预</div>
+  </div>
+
+  <div class="comparison-title">
+    <h3>结构差异</h3>
+    <span class="text-small">选择列名可切换模型</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-sm comparison-table">
+      <thead>
+        <tr>
+          <th scope="col">维度</th>
+          <th class="model-col" scope="col"><button class="model-col-button" type="button" data-model="legrand">Legrand 2007</button></th>
+          <th class="model-col" scope="col"><button class="model-col-button" type="button" data-model="abbate">Abbate 2016</button></th>
+          <th class="model-col" scope="col"><button class="model-col-button" type="button" data-model="agusto">Agusto 2017</button></th>
+          <th class="model-col" scope="col"><button class="model-col-button" type="button" data-model="lokonon">Lokonon 2026</button></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">急性临床链</th>
+          <td class="yes">显式</td>
+          <td class="yes">显式</td>
+          <td class="yes">显式</td>
+          <td class="limited">聚合为 Z(t)</td>
+        </tr>
+        <tr>
+          <th scope="row">康复者状态</th>
+          <td class="none">R 吸收</td>
+          <td class="yes">C 期</td>
+          <td class="yes">可返回</td>
+          <td class="yes">按年龄分 M<sub>g</sub></td>
+        </tr>
+        <tr>
+          <th scope="row">病毒复燃</th>
+          <td class="none">无</td>
+          <td class="limited">不要求症状复发</td>
+          <td class="yes">R → I</td>
+          <td class="yes">残存 → 新疫情</td>
+        </tr>
+        <tr>
+          <th scope="row">再次感染</th>
+          <td class="none">无</td>
+          <td class="none">无</td>
+          <td class="yes">R → S</td>
+          <td class="none">无</td>
+        </tr>
+        <tr>
+          <th scope="row">性传播</th>
+          <td class="none">无</td>
+          <td class="yes">C → S</td>
+          <td class="none">未单列</td>
+          <td class="yes">男性储库</td>
+        </tr>
+        <tr>
+          <th scope="row">年龄 / 清除率</th>
+          <td class="none">无</td>
+          <td class="none">无</td>
+          <td class="none">无</td>
+          <td class="yes">显式</td>
+        </tr>
+        <tr>
+          <th scope="row">主要决策量</th>
+          <td>R₀、干预效果</td>
+          <td>疫情持续时间</td>
+          <td>阈值、后向分岔</td>
+          <td>R<sub>c</sub>、再燃压力</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="takeaway">
+    <div class="takeaway-item">
+      <strong>旧模型解决</strong>
+      <span>急性期传播与干预如何改变疫情曲线。</span>
+    </div>
+    <div class="takeaway-item">
+      <strong>新增模型解决</strong>
+      <span>低频事件如何拖长疫情尾部、触发再燃，或改变消除阈值。</span>
+    </div>
+    <div class="takeaway-item">
+      <strong>不能直接横比</strong>
+      <span>状态图、统计判定和年龄储库模型回答的是不同层级的问题。</span>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const root = document.getElementById("ebola-model-evolution");
+      const svg = document.getElementById("model-diagram");
+      const diagramTitle = document.getElementById("diagram-title");
+      const diagramDesc = document.getElementById("diagram-desc");
+      const host = document.getElementById("diagram-host");
+      const title = document.getElementById("model-title");
+      const kicker = document.getElementById("model-kicker");
+      const source = document.getElementById("model-source");
+      const statMechanism = document.getElementById("stat-mechanism");
+      const statHorizon = document.getElementById("stat-horizon");
+      const statOutput = document.getElementById("stat-output");
+      const deltaRow = document.getElementById("delta-row");
+      const timeActive = document.getElementById("time-active");
+      const timeCaption = document.getElementById("time-caption");
+
+      const models = {
+        legrand: {
+          kicker: "急性传播模型",
+          title: "Legrand 等 · SEIHFR",
+          ariaTitle: "Legrand 2007 模型状态图",
+          ariaDesc: "易感者、暴露者、社区感染者、住院者、未安葬死者和移出传播链者组成的急性传播链。",
+          source: "https://doi.org/10.1017/S0950268806007217",
+          mechanism: "8 条急性转移",
+          horizon: "1–51 周",
+          output: "R₀ / 干预效果",
+          deltas: ["R 为吸收态", "均匀混合", "周发病拟合"],
+          time: [1, 1, "疫情曲线与干预"],
+          render: renderLegrand
+        },
+        agusto: {
+          kicker: "机制扩展模型",
+          title: "Agusto · 复发 + 再感染",
+          ariaTitle: "Agusto 2017 模型状态图",
+          ariaDesc: "急性传播链之后，康复者既可能复燃回到感染者，也可能重新变成易感者。",
+          source: "https://doi.org/10.1016/j.mbs.2016.11.002",
+          mechanism: "+ 复发 + 再感染",
+          horizon: "长期均衡",
+          output: "阈值 + 后向分岔",
+          deltas: ["R → I", "R → S", "忽略复发可低估负担"],
+          time: [1, 3, "机制探索与长期均衡"],
+          render: renderAgusto
+        },
+        abbate: {
+          kicker: "康复期传播模型",
+          title: "Abbate 等 · SEICR",
+          ariaTitle: "Abbate 2016 模型状态图",
+          ariaDesc: "康复者进入独立的康复期状态，并可通过性传播重新感染易感者，从而拖长疫情尾部。",
+          source: "https://doi.org/10.1371/journal.pntd.0004676",
+          mechanism: "+ 康复期性传播",
+          horizon: "数周 + 数月",
+          output: "持续时间 / 规模",
+          deltas: ["C = 康复期传播者", "0.1% / 次", "6 个月→+540 天"],
+          time: [2, 2, "疫情尾部与结束判定"],
+          render: renderAbbate
+        },
+        lokonon: {
+          kicker: "年龄分层储库模型",
+          title: "Lokonon 等 · 康复者再燃风险",
+          ariaTitle: "Lokonon 2026 康复者储库模型图",
+          ariaDesc: "新疫情产生不同年龄的男性康复者储库，年龄越大病毒清除越慢，残余储库可能再次触发疫情。",
+          source: "https://doi.org/10.64898/2026.07.03.26357211",
+          mechanism: "+ 年龄分层储库",
+          horizon: "数年至多年",
+          output: "R_c / 再燃压力",
+          deltas: ["≤25 / 26–35 / 35+", "基线年清除率 0.68", "35+ 贡献最大"],
+          time: [3, 2, "大疫情后的多年再燃风险"],
+          render: renderLokonon
+        }
+      };
+
+      let currentModel = "legrand";
+      let narrow = false;
+
+      function markers() {
+        return `
+          <defs>
+            <marker id="head-neutral" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--edge)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="head-acute" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--acute)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="head-survivor" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--survivor)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="head-relapse" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--relapse)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="head-reinfect" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--reinfect)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+            <marker id="head-scale" orient="auto" markerUnits="userSpaceOnUse" refX="8" refY="5" markerWidth="10" markerHeight="10">
+              <path d="M1 1L8 5 1 9" fill="none" stroke="var(--scale)" stroke-linecap="round" stroke-linejoin="round"></path>
+            </marker>
+          </defs>
+        `;
+      }
+
+      function node(x, y, label, type = "", sub = "", width = 64, height = 38) {
+        const centerY = sub ? 13 : 19;
+        return `
+          <g class="node ${type}" transform="translate(${x} ${y})">
+            <rect width="${width}" height="${height}" rx="5"></rect>
+            <text x="${width / 2}" y="${centerY}">${label}</text>
+            ${sub ? `<text class="subtext" x="${width / 2}" y="29">${sub}</text>` : ""}
+          </g>
+        `;
+      }
+
+      function edge(d, type, marker, label = "", x = 0, y = 0) {
+        return `
+          <path class="edge ${type}" d="${d}" marker-end="url(#${marker})"></path>
+          ${label ? `<text class="edge-label" x="${x}" y="${y}">${label}</text>` : ""}
+        `;
+      }
+
+      function renderLegrand(isNarrow) {
+        if (!isNarrow) {
+          return `
+            <svg class="diagram" viewBox="0 0 780 245" role="img" aria-labelledby="diagram-title diagram-desc">
+              ${markers()}
+              ${edge("M84 112H126", "acute", "head-acute")}
+              ${edge("M194 112H236", "acute", "head-acute")}
+              ${edge("M304 112H346", "acute", "head-acute")}
+              ${edge("M414 112H456", "acute", "head-acute")}
+              ${edge("M524 112H616", "acute", "head-acute")}
+              ${edge("M272 150C360 218 520 218 648 150", "acute", "head-acute", "I → R", 460, 208)}
+              ${edge("M272 150C350 184 420 184 492 150", "acute", "head-acute", "I → F", 382, 183)}
+              ${edge("M382 150C430 186 530 186 648 150", "acute", "head-acute", "H → R", 520, 183)}
+              ${node(20, 93, "S", "acute", "", 64, 38)}
+              ${node(130, 93, "E", "acute", "", 64, 38)}
+              ${node(240, 93, "I", "acute", "", 64, 38)}
+              ${node(350, 93, "H", "acute", "", 64, 38)}
+              ${node(460, 93, "F", "acute", "", 64, 38)}
+              ${node(620, 93, "R", "survivor", "吸收态", 64, 38)}
+              <text class="threshold-label" x="730" y="62">没有返回路径</text>
+            </svg>
+          `;
+        }
+        return `
+          <svg class="diagram" viewBox="0 0 340 430" role="img" aria-labelledby="diagram-title diagram-desc">
+            ${markers()}
+            ${edge("M80 58V92", "acute", "head-acute")}
+            ${edge("M80 134V168", "acute", "head-acute")}
+            ${edge("M80 210V244", "acute", "head-acute")}
+            ${edge("M80 286V320", "acute", "head-acute")}
+            ${edge("M80 362V394", "acute", "head-acute")}
+            ${node(48, 20, "S", "acute")}
+            ${node(48, 96, "E", "acute")}
+            ${node(48, 172, "I", "acute")}
+            ${node(48, 248, "H", "acute")}
+            ${node(48, 324, "F", "acute")}
+            ${node(48, 398, "R", "survivor", "吸收态")}
+            ${edge("M112 190C190 190 190 398 112 416", "acute", "head-acute", "I → R", 248, 250)}
+            ${edge("M112 266C190 266 190 398 112 416", "acute", "head-acute", "H → R", 248, 322)}
+            <text class="threshold-label" x="322" y="226">无复发 / 再感染</text>
+          </svg>
+        `;
+      }
+
+      function renderAgusto(isNarrow) {
+        if (!isNarrow) {
+          return `
+            <svg class="diagram" viewBox="0 0 780 275" role="img" aria-labelledby="diagram-title diagram-desc">
+              ${markers()}
+              ${edge("M84 131H126", "acute", "head-acute")}
+              ${edge("M194 131H236", "acute", "head-acute")}
+              ${edge("M304 131H346", "acute", "head-acute")}
+              ${edge("M414 131H456", "acute", "head-acute")}
+              ${edge("M524 131H616", "acute", "head-acute")}
+              ${edge("M272 169C360 238 520 238 648 169", "acute", "head-acute", "I → R", 460, 228)}
+              ${edge("M652 93C620 18 315 18 277 93", "relapse", "head-relapse", "复发 R → I", 465, 24)}
+              ${edge("M652 131C640 240 104 250 68 169", "reinfect", "head-reinfect", "再感染 R → S", 360, 255)}
+              ${node(20, 112, "S", "acute", "", 64, 38)}
+              ${node(130, 112, "E", "acute", "", 64, 38)}
+              ${node(240, 112, "I", "acute", "", 64, 38)}
+              ${node(350, 112, "H", "acute", "", 64, 38)}
+              ${node(460, 112, "F", "acute", "", 64, 38)}
+              ${node(620, 112, "R", "survivor", "可返回", 64, 38)}
+            </svg>
+          `;
+        }
+        return `
+          <svg class="diagram" viewBox="0 0 340 470" role="img" aria-labelledby="diagram-title diagram-desc">
+            ${markers()}
+            ${edge("M80 58V92", "acute", "head-acute")}
+            ${edge("M80 134V168", "acute", "head-acute")}
+            ${edge("M80 210V244", "acute", "head-acute")}
+            ${edge("M80 286V320", "acute", "head-acute")}
+            ${edge("M80 362V396", "acute", "head-acute")}
+            ${node(48, 20, "S", "acute")}
+            ${node(48, 96, "E", "acute")}
+            ${node(48, 172, "I", "acute")}
+            ${node(48, 248, "H", "acute")}
+            ${node(48, 324, "F", "acute")}
+            ${node(48, 398, "R", "survivor", "可返回")}
+            ${edge("M112 190C200 190 200 398 112 416", "acute", "head-acute", "I → R", 260, 254)}
+            ${edge("M112 416C295 416 295 190 112 190", "relapse", "head-relapse", "复发", 284, 300)}
+            ${edge("M112 416C310 416 310 34 112 34", "reinfect", "head-reinfect", "再感染", 312, 154)}
+          </svg>
+        `;
+      }
+
+      function renderAbbate(isNarrow) {
+        if (!isNarrow) {
+          return `
+            <svg class="diagram" viewBox="0 0 780 270" role="img" aria-labelledby="diagram-title diagram-desc">
+              ${markers()}
+              ${edge("M84 131H126", "acute", "head-acute")}
+              ${edge("M194 131H236", "acute", "head-acute")}
+              ${edge("M304 131H400", "acute", "head-acute")}
+              ${edge("M464 131H616", "survivor", "head-survivor")}
+              ${edge("M432 93C420 20 165 20 162 93", "survivor", "head-survivor", "性传播 C → S", 296, 25)}
+              ${node(20, 112, "S", "acute", "", 64, 38)}
+              ${node(130, 112, "E", "acute", "", 64, 38)}
+              ${node(240, 112, "I", "acute", "", 64, 38)}
+              ${node(400, 112, "C", "survivor", "康复期", 64, 38)}
+              ${node(620, 112, "R", "survivor", "清除", 64, 38)}
+              <text class="threshold-label" x="730" y="214">数月传播窗口</text>
+            </svg>
+          `;
+        }
+        return `
+          <svg class="diagram" viewBox="0 0 340 430" role="img" aria-labelledby="diagram-title diagram-desc">
+            ${markers()}
+            ${edge("M80 58V92", "acute", "head-acute")}
+            ${edge("M80 134V168", "acute", "head-acute")}
+            ${edge("M80 210V244", "acute", "head-acute")}
+            ${edge("M80 286V320", "survivor", "head-survivor")}
+            ${node(48, 20, "S", "acute")}
+            ${node(48, 96, "E", "acute")}
+            ${node(48, 172, "I", "acute")}
+            ${node(48, 248, "C", "survivor", "康复期")}
+            ${node(48, 324, "R", "survivor", "清除")}
+            ${edge("M112 280C270 280 270 34 112 34", "survivor", "head-survivor", "性传播", 286, 160)}
+          </svg>
+        `;
+      }
+
+      function renderLokonon(isNarrow) {
+        if (!isNarrow) {
+          return `
+            <svg class="diagram" viewBox="0 0 780 300" role="img" aria-labelledby="diagram-title diagram-desc">
+              ${markers()}
+              ${edge("M154 150C190 150 196 72 244 72", "scale", "head-scale")}
+              ${edge("M154 150H244", "scale", "head-scale")}
+              ${edge("M154 150C190 150 196 228 244 228", "scale", "head-scale")}
+              ${edge("M372 72H500", "survivor", "head-survivor")}
+              ${edge("M372 150H500", "survivor", "head-survivor")}
+              ${edge("M372 228H500", "survivor", "head-survivor")}
+              ${edge("M628 72C676 72 676 128 676 132", "scale", "head-scale")}
+              ${edge("M628 150H676", "scale", "head-scale")}
+              ${edge("M628 228C676 228 676 172 676 168", "scale", "head-scale")}
+              ${node(20, 131, "新疫情", "scale", "Z(t)", 104, 38)}
+              ${node(244, 53, "≤25", "survivor", "清除较快", 128, 38)}
+              ${node(244, 131, "26–35", "survivor", "中间", 128, 38)}
+              ${node(244, 209, "35+", "survivor", "持续最久", 128, 38)}
+              ${node(500, 53, "M₁", "survivor", "储库", 128, 38)}
+              ${node(500, 131, "M₂", "survivor", "储库", 128, 38)}
+              ${node(500, 209, "M₃", "survivor", "储库", 128, 38)}
+              ${node(676, 123, "R_c", "scale", "", 64, 54)}
+              <path class="threshold" d="M690 24V266"></path>
+              <text class="threshold-label" x="684" y="18">1</text>
+              <text class="threshold-label" x="750" y="285">多数情景 &lt; 1</text>
+            </svg>
+          `;
+        }
+        return `
+          <svg class="diagram" viewBox="0 0 340 430" role="img" aria-labelledby="diagram-title diagram-desc">
+            ${markers()}
+            ${edge("M65 54C112 54 112 84 150 84", "scale", "head-scale")}
+            ${edge("M65 54C112 54 112 184 150 184", "scale", "head-scale")}
+            ${edge("M65 54C112 54 112 284 150 284", "scale", "head-scale")}
+            ${edge("M234 84H272", "survivor", "head-survivor")}
+            ${edge("M234 184H272", "survivor", "head-survivor")}
+            ${edge("M234 284H272", "survivor", "head-survivor")}
+            ${node(20, 35, "新疫情", "scale", "Z(t)", 90, 38)}
+            ${node(150, 65, "≤25", "survivor", "清除较快", 84, 38)}
+            ${node(150, 165, "26–35", "survivor", "中间", 84, 38)}
+            ${node(150, 265, "35+", "survivor", "持续最久", 84, 38)}
+            <rect class="persistence" x="272" y="72" width="23" height="14" rx="2"></rect>
+            <rect class="persistence" x="272" y="172" width="39" height="14" rx="2"></rect>
+            <rect class="persistence" x="272" y="272" width="55" height="14" rx="2"></rect>
+            <text class="threshold-label" x="272" y="55">相对持续</text>
+            ${edge("M80 373C190 373 218 336 238 336", "scale", "head-scale")}
+            ${node(238, 310, "R_c", "scale", "多数 &lt;1", 82, 52)}
+          </svg>
+        `;
+      }
+
+      function setModel(id, persist = true) {
+        if (!models[id]) return;
+        currentModel = id;
+        const model = models[id];
+        document.querySelectorAll('[data-model]').forEach((button) => {
+          button.setAttribute("aria-pressed", String(button.dataset.model === id));
+        });
+        kicker.textContent = model.kicker;
+        title.textContent = model.title;
+        source.href = model.source;
+        statMechanism.textContent = model.mechanism;
+        statHorizon.textContent = model.horizon;
+        statOutput.textContent = model.output;
+        diagramTitle.textContent = model.ariaTitle;
+        diagramDesc.textContent = model.ariaDesc;
+        deltaRow.innerHTML = '<span class="text-small delta-label">与旧模型相比</span>' +
+          model.deltas.map((item) => `<span class="viz-badge">${item}</span>`).join("");
+        timeActive.style.gridColumn = `${model.time[0]} / span ${model.time[1]}`;
+        timeCaption.textContent = model.time[2];
+        renderDiagram();
+        if (persist && window.openai?.setWidgetState) {
+          window.openai.setWidgetState({
+            modelContent: { model: id },
+            privateContent: { model: id }
+          }).catch(() => {});
+        }
+      }
+
+      function renderDiagram() {
+        const width = host.getBoundingClientRect().width || 736;
+        narrow = width < 560;
+        const model = models[currentModel];
+        let markup = model.render(narrow);
+        markup = markup.replace(
+          ">",
+          `><title id="diagram-title">${model.ariaTitle}</title><desc id="diagram-desc">${model.ariaDesc}</desc>`
+        );
+        host.innerHTML = markup;
+      }
+
+      document.querySelectorAll('[data-model]').forEach((button) => {
+        button.addEventListener("click", () => setModel(button.dataset.model));
+      });
+
+      let resizeTimer = 0;
+      const observer = new ResizeObserver(() => {
+        window.clearTimeout(resizeTimer);
+        resizeTimer = window.setTimeout(renderDiagram, 80);
+      });
+      observer.observe(host);
+
+      window.addEventListener("openai:set_globals", (event) => {
+        const state = event.detail?.globals?.widgetState;
+        if (state?.model && models[state.model] && state.model !== currentModel) {
+          setModel(state.model, false);
+        }
+      });
+
+      const savedModel = window.openai?.widgetState?.model;
+      setModel(models[savedModel] ? savedModel : "legrand", false);
+    })();
+  </script>
+</div>
